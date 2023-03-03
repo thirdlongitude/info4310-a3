@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF=8">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <style>
+  </style>
+</head>
+
+<body>
+  <h1>INFO 4310 A3</h1>
+
+  <div id="map-div">
+    <svg id="map-svg" height="800" width="900"></svg>
+    <svg id="map-legend"></svg>
+  </div>
+
+  <div id="type-filter-div">
+    type filters here
+  </div>
+
+  <script>
+    const svg = d3.select("#map-svg");
+    const width = svg.attr("width");
+    const height = svg.attr("height");
+    const margins = { top: 20, right: 20, bottom: 20, left: 20 };
+    const mapWidth = width - margins.left - margins.right;
+    const mapHeight = height - margins.top - margins.bottom;
+    const map = svg.append("g")
+      .attr("transform", "translate(" + margins.left + ", " + margins.top + ")");
+
+    // load data files
+    const requestData = async function () {
+      // const house_data = await d3.json("");
+      // console.log(house_data);
+      const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
+      console.log(pittsburgh);
+
+      // draw map
+      let projection = d3.geoMercator().fitSize([mapWidth, mapHeight], pittsburgh);
+      let path = d3.geoPath().projection(projection);
+
+      map.selectAll("path.neighborhoods").data(pittsburgh.features)
+        .join("path")
+        .attr("class", "neighborhoods")
+        .attr("d", path)
+        .attr("fill", "gray")
+        .attr("stroke", "white");
+
+    }
+
+    requestData();
+  </script>
+</body>
+
+</html>
