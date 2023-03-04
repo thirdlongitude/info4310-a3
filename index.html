@@ -33,8 +33,8 @@
 
     // load data files
     const requestData = async function () {
-      // const house_data = await d3.json("");
-      // console.log(house_data);
+      const house_data = await d3.csv("zillow.csv");
+      console.log(house_data);
       const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
       console.log(pittsburgh);
 
@@ -49,6 +49,19 @@
         .attr("fill", "gray")
         .attr("stroke", "white");
 
+      // draw circles for houses
+      const price_colors = d3.schemeOranges[10];
+
+      house_data.forEach(d => {
+        d.position = projection([d.Longitude, d.Latitude]);
+      });
+
+      map.selectAll("circle").data(house_data)
+        .join("circle")
+        .attr("r", 3)
+        .attr("fill", "black")
+        .attr("cx", d => d.position[0])
+        .attr("cy", d => d.position[1]);
     }
 
     requestData();
