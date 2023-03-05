@@ -5,113 +5,121 @@
   <meta charset="UTF=8">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <script src="scatter_chart.js"></script>
   <style>
   </style>
 </head>
 
-<body>
+<body>  
   <h1>INFO 4310 A3</h1>
-
   <div id="map-div">
     <svg id="map-svg" height="800" width="900"></svg>
     <svg id="map-legend"></svg>
   </div>
-
   <div id="type-filter-div">
     type filters here
   </div>
-
+  <div>
+    <svg id="scatter-plot" height="800" width="900"></svg>
+  </div>
   <script>
     const svg = d3.select("#map-svg");
-      const width = svg.attr("width");
-      const height = svg.attr("height");
-      const margins = { top: 20, right: 20, bottom: 20, left: 20 };
-      const mapWidth = width - margins.left - margins.right;
-      const mapHeight = height - margins.top - margins.bottom;
-      const map = svg.append("g")
-        .attr("transform", "translate(" + margins.left + ", " + margins.top + ")");
+    const width = svg.attr("width");
+    const height = svg.attr("height");
+    const margins = { top: 20, right: 20, bottom: 20, left: 20 };
+    const mapWidth = width - margins.left - margins.right;
+    const mapHeight = height - margins.top - margins.bottom;
+    const map = svg.append("g")
+      .attr("transform", "translate(" + margins.left + ", " + margins.top + ")");
 
-      // load data files
-      const requestData = async function () {
-        const house_data = await d3.csv("zillow.csv");
-        console.log(house_data);
+    // load data files
+    const requestData = async function () {
+      const house_data = await d3.csv("zillow.csv");
+      console.log(house_data);
 
-        const min_price = d3.min(house_data.map(d => d["Sale Amount"]).map(Number));
-        console.log(min_price);
-        const max_price = d3.max(house_data.map(d => d["Sale Amount"]).map(Number));
-        console.log(max_price);
+      const min_price = d3.min(house_data.map(d => d["Sale Amount"]).map(Number));
+      console.log(min_price);
+      const max_price = d3.max(house_data.map(d => d["Sale Amount"]).map(Number));
+      console.log(max_price);
 
-        const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
+      const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
 
-        // draw map
-        let projection = d3.geoMercator().fitSize([mapWidth, mapHeight], pittsburgh);
-        let path = d3.geoPath().projection(projection);
+      // draw map
+      let projection = d3.geoMercator().fitSize([mapWidth, mapHeight], pittsburgh);
+      let path = d3.geoPath().projection(projection);
 
-        map.selectAll("path.neighborhoods").data(pittsburgh.features)
-          .join("path")
-          .attr("class", "neighborhoods")
-          .attr("d", path)
-          .attr("fill", "lightgray")
-          .attr("stroke", "gray")
-          .attr("strokewidth", 0.5);
+      map.selectAll("path.neighborhoods").data(pittsburgh.features)
+        .join("path")
+        .attr("class", "neighborhoods")
+        .attr("d", path)
+        .attr("fill", "lightgray")
+        .attr("stroke", "gray")
+        .attr("strokewidth", 0.5);
 
-        // draw circles for houses
-        const price_colors = ["#fee7cf", "#fdd4ab", "#fdb97e", "#fd9c51", "#f77d2a",
-          "#e85e0e", "#cc4503", "#a33503", "#7f2704"]; // d3 scheme: sequential oranges
-        const priceScale = d3.scaleLog()
-          .domain([min_price, max_price]) // calculated above
-          .range([price_colors[2], price_colors[8]]);
+      // draw circles for houses
+      const price_colors = ["#fee7cf", "#fdd4ab", "#fdb97e", "#fd9c51", "#f77d2a",
+        "#e85e0e", "#cc4503", "#a33503", "#7f2704"]; // d3 scheme: sequential oranges
+      const priceScale = d3.scaleLog()
+        .domain([min_price, max_price]) // calculated above
+        .range([price_colors[2], price_colors[8]]);
 
-        house_data.forEach(d => {
-          d.position = projection([d.Longitude, d.Latitude]);
+      house_data.forEach(d => {
+        d.position = projection([d.Longitude, d.Latitude]);
+      });
+
+      map.selectAll("circle").data(house_data)
+        .join("circle")
+        .attr("r", 4)
+        // .attr("fill", "black")
+        .attr("fill", d => priceScale(d["Sale Amount"]))
+        .attr("opacity", 0.9)
+        .attr("cx", d => d.position[0])
+        .attr("cy", d => d.position[1]);
+
+      // draw checkboxes for property type
+      const type_filter_div = d3.select("#type-filter-div");
+      const types = house_data.map(d => d['Property Type']);
+      const unique_types = [...new Set(types)];
+      const type_checkboxes = type_filter_div.append("div")
+        .attr("id", "type-checkboxes");
+
+      unique_types.forEach(d => {
+        type_checkboxes.append("input")
+          .attr("type", "checkbox")
+          .attr("value", d)
+          .attr("id", d)
+          .attr("name", "type-checkbox")
+          .attr("unchecked", true)
+
+        type_checkboxes.append("label")
+          .text(d);
+      });
+
+      const svg2 = d3.select("#scatter-plot")
+      const width2 = svg2.attr("width");
+      const height2 = svg2.attr("height");
+      const margins2 = { top: 50, right: 50, bottom: 20, left: 60 };
+      const scatterWidth = width2 - margins2.left - margins2.right;
+      const scatterHeight = height2 - margins2.top - margins2.bottom;
+
+      let chartArea = svg2.append("g")
+        .attr("transform", "translate(" + margins2.left + ", " + margins2.top + ")");
+
+      // check which checkboxes are checked
+      let checkbox = document.querySelectorAll('input[name="type-checkbox"]');
+      checkbox.forEach(function (box) {
+
+        box.addEventListener('change', function () {
+          // remove previous scatterplot
+          chartArea.selectAll('*').remove();
+          // draw new scatterplot
+          scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea);
         });
-
-        map.selectAll("circle").data(house_data)
-          .join("circle")
-          .attr("r", 4)
-          // .attr("fill", "black")
-          .attr("fill", d => priceScale(d["Sale Amount"]))
-          .attr("opacity", 0.9)
-          .attr("cx", d => d.position[0])
-          .attr("cy", d => d.position[1]);
-
-        // draw checkboxes for property type
-        const type_filter_div = d3.select("#type-filter-div");
-        const types = house_data.map(d => d['Property Type']);
-        const unique_types = [...new Set(types)];
-        const type_checkboxes = type_filter_div.append("div")
-          .attr("id", "type-checkboxes");
-
-        unique_types.forEach(d => {
-          type_checkboxes.append("input")
-            .attr("type", "checkbox")
-            .attr("value", d)
-            .attr("id", d)
-            .attr("name", "type-checkbox")
-            .attr("unchecked", true)
-            .on("change", updateChart);
-
-          type_checkboxes.append("label")
-            .text(d);
-        });
-        // check which checkboxes are checked
-        let checkbox = document.querySelectorAll('input[name="type-checkbox"]');
-
-        function updateChart() {
-          scatterPlot(checkbox)
-        }
-
-      }
-
+      });
+      scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea);
+    }
     requestData();
+
   </script>
-
-  <div>
-    <svg id="scatterplot" height="800" width="900" ></svg>
-  </div>
-
-
-  <script src="scatter_chart.js"></script>
 </body>
-
 </html>
