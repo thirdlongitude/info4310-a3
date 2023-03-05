@@ -36,7 +36,6 @@
       const house_data = await d3.csv("zillow.csv");
       console.log(house_data);
       const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
-      console.log(pittsburgh);
 
       // draw map
       let projection = d3.geoMercator().fitSize([mapWidth, mapHeight], pittsburgh);
@@ -62,6 +61,44 @@
         .attr("fill", "black")
         .attr("cx", d => d.position[0])
         .attr("cy", d => d.position[1]);
+      
+
+// You can choose which filter you prefer? 
+// I think the checkbox is more intuitive, but the select is more compact.
+
+      // draw filters for property type
+      const type_filter_div = d3.select("#type-filter-div");
+      const type_filter = type_filter_div.append("select")
+        .attr("id", "type-filter");
+      
+      const types = house_data.map(d => d['Property Type']);
+      const unique_types = [...new Set(types)];
+      console.log();
+      unique_types.forEach(d => {
+        type_filter.append("option")
+          .attr("value", d)
+          .text(d);
+      });
+
+      // draw checkboxes for property type
+      const type_checkboxes = type_filter_div.append("div")
+        .attr("id", "type-checkboxes");
+      
+      unique_types.forEach(d => {
+        type_checkboxes.append("input")
+          .attr("type", "checkbox")
+          .attr("value", d)
+          .attr("id", d)
+          .attr("name", "type-checkbox")
+          .attr("checked", true);
+        type_checkboxes.append("label")
+          .attr("for", d)
+          .text(d);
+      });
+
+
+    
+      
     }
 
     requestData();
