@@ -25,7 +25,7 @@
   </style>
 </head>
 
-<body>  
+<body>
   <h1>INFO 4310 A3</h1>
   <div id="map-div">
     <svg id="map-svg" height="800" width="900"></svg>
@@ -51,13 +51,26 @@
     const requestData = async function () {
       const house_data = await d3.csv("zillow.csv");
       console.log(house_data);
+      const neighborhood_avg_price = await d3.csv("output.csv");
+      console.log(neighborhood_avg_price);
+      // convert neighborhood_avg_price to dict for easier access
+      const avg_price_dict = Object.assign({}, ...neighborhood_avg_price.map(x => ({ [x.Neighborhood]: x["Average Price"] })));
+      console.log(avg_price_dict);
 
       const min_price = d3.min(house_data.map(d => d["Sale Amount"]).map(Number));
       console.log(min_price);
       const max_price = d3.max(house_data.map(d => d["Sale Amount"]).map(Number));
       console.log(max_price);
 
+      const price_colors = ["#fee7cf", "#fdd4ab", "#fdb97e", "#fd9c51", "#f77d2a",
+        "#e85e0e", "#cc4503", "#a33503", "#7f2704"]; // d3 scheme: sequential oranges
+      const priceScale = d3.scaleLog()
+        .domain([min_price, max_price]) // calculated above
+        .range([price_colors[2], price_colors[8]])
+        .unknown("lightgray");
+
       const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
+      console.log(pittsburgh);
 
       // draw map
       let projection = d3.geoMercator().fitSize([mapWidth, mapHeight], pittsburgh);
@@ -67,17 +80,12 @@
         .join("path")
         .attr("class", "neighborhoods")
         .attr("d", path)
-        .attr("fill", "lightgray")
+        .attr("fill", d => priceScale(Number(avg_price_dict[d.properties.name])))
+        .attr("opacity", 0.4)
         .attr("stroke", "gray")
         .attr("strokewidth", 0.5);
 
       // draw circles for houses
-      const price_colors = ["#fee7cf", "#fdd4ab", "#fdb97e", "#fd9c51", "#f77d2a",
-        "#e85e0e", "#cc4503", "#a33503", "#7f2704"]; // d3 scheme: sequential oranges
-      const priceScale = d3.scaleLog()
-        .domain([min_price, max_price]) // calculated above
-        .range([price_colors[2], price_colors[8]]);
-
       house_data.forEach(d => {
         d.position = projection([d.Longitude, d.Latitude]);
       });
@@ -155,4 +163,5 @@
 
   </script>
 </body>
+
 </html>
