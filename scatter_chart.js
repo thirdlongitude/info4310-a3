@@ -41,7 +41,7 @@ function scatterPlot(checkbox, data, scatterWidth, scatterHeight, chartArea) {
         .append("circle")
         .attr("cx", d => xScale(d['Bedrooms']))
         .attr("cy", d => yScale(d['Sale Amount']))
-        .attr("r", 2)
-        .attr("fill", "purple")
+        .attr("r", 6)
+        .attr("fill", "steelblue")
         .attr("opacity", 0.5);
 }

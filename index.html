@@ -7,6 +7,21 @@
   <script src="https://d3js.org/topojson.v3.min.js"></script>
   <script src="scatter_chart.js"></script>
   <style>
+    #checkbox {
+      margin: 10px;
+      padding: 20px;
+    }
+
+    #uncheck-all {
+      margin: 10px;
+      padding: 5px;
+      background-color: #f1f1f1;
+      color: black;
+      cursor: pointer;
+      border-radius: 5px;
+      text-align: center;
+    }
+    
   </style>
 </head>
 
@@ -87,13 +102,31 @@
         type_checkboxes.append("input")
           .attr("type", "checkbox")
           .attr("value", d)
-          .attr("id", d)
+          .attr("id", "checkbox")
           .attr("name", "type-checkbox")
           .attr("unchecked", true)
 
         type_checkboxes.append("label")
           .text(d);
       });
+
+      // add a button to unchecked all checkboxes
+      type_checkboxes.append("button")
+        .attr("id", "uncheck-all")
+        .text("Uncheck All");
+      
+      // add function to uncheck all checkboxes
+      const uncheck_all = document.getElementById("uncheck-all");
+      uncheck_all.addEventListener('click', function () {
+        let checkbox = document.querySelectorAll('input[name="type-checkbox"]');
+        checkbox.forEach(function (box) {
+          box.checked = false;
+          // clear the graph
+          chartArea.selectAll('*').remove();
+        });
+      });
+  
+      
 
       const svg2 = d3.select("#scatter-plot")
       const width2 = svg2.attr("width");
