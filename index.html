@@ -38,6 +38,9 @@
       console.log(house_data);
       const neighborhood_avg_price = await d3.csv("output.csv");
       console.log(neighborhood_avg_price);
+      // convert neighborhood_avg_price to dict for easier access
+      const avg_price_dict = Object.assign({}, ...neighborhood_avg_price.map(x => ({ [x.Neighborhood]: x["Average Price"] })));
+      console.log(avg_price_dict);
 
       const min_price = d3.min(house_data.map(d => d["Sale Amount"]).map(Number));
       console.log(min_price);
@@ -48,7 +51,8 @@
         "#e85e0e", "#cc4503", "#a33503", "#7f2704"]; // d3 scheme: sequential oranges
       const priceScale = d3.scaleLog()
         .domain([min_price, max_price]) // calculated above
-        .range([price_colors[2], price_colors[8]]);
+        .range([price_colors[2], price_colors[8]])
+        .unknown("lightgray");
 
       const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
       console.log(pittsburgh);
@@ -61,8 +65,8 @@
         .join("path")
         .attr("class", "neighborhoods")
         .attr("d", path)
-        .attr("fill", "lightgray") // replace with d => priceScale(d["Sale Amount"])
-        // d.properties.name
+        .attr("fill", d => priceScale(Number(avg_price_dict[d.properties.name])))
+        .attr("opacity", 0.4)
         .attr("stroke", "gray")
         .attr("strokewidth", 0.5);
 
