@@ -27,10 +27,18 @@ function scatterPlot(checkbox, data, scatterWidth, scatterHeight, chartArea, ann
     // draw axes
     annotations.append("g")
         .attr("transform", "translate(60, " + (scatterHeight + 20) + ")")
-        .call(xAxis);
+        .call(xAxis)
+        // append text to x-axis
+        .append("text")
+        .attr("x", scatterWidth / 2)
+        .attr("y", 40)
+        .attr("fill", "black")
+        .attr("font-size", "14px")
+        .text("Bedrooms");
+
     annotations.append("g")
         .attr("transform", "translate(50,20)")
-        .call(yAxis);
+        .call(yAxis)
 
     // returns a random number from -4 to 4; used to differentiate between points in dense clusters
     function jitter() {
