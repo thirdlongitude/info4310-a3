@@ -40,17 +40,19 @@
       padding: 20px;
     }
 
-    #uncheck-all {
-      margin: 10px;
-      padding: 5px;
-      background-color: #f1f1f1;
-      color: black;
-      cursor: pointer;
-      border-radius: 5px;
-      text-align: center;
+    #clear {
+      margin:10px;
+      font-size:16px;
+      padding-top: 3px;
+      padding-bottom: 3px;
+      padding-left: 5px;
+      padding-right: 5px;
+      outline:none;
+      border:none;
+      border-radius: 10px;
     }
 
-    #uncheck-all:hover {
+    #clear:hover {
       background-color: #ddd;
     }
     
@@ -63,9 +65,10 @@
     <svg id="map-svg" height="800" width="900"></svg>
     <svg id="map-legend" width="150"></svg>
   </div>
+  <h2>Please choose property Type</h2>
   <div id="type-filter-div"></div>
   <div>
-    <svg id="scatter-plot" height="800" width="900"></svg>
+    <svg id="scatter-plot" height="650" width="900"></svg>
   </div>
   <script>
     const svg = d3.select("#map-svg");
@@ -215,11 +218,11 @@
 
       // add a button to uncheck all checkboxes
       type_checkboxes.append("button")
-        .attr("id", "uncheck-all")
-        .text("Uncheck All");
+        .attr("id", "clear")
+        .text("Clear");
 
       // add function to uncheck all checkboxes
-      const uncheck_all = document.getElementById("uncheck-all");
+      const uncheck_all = document.getElementById("clear");
       uncheck_all.addEventListener('click', function () {
         let checkbox = document.querySelectorAll('input[name="type-checkbox"]');
         checkbox.forEach(function (box) {
