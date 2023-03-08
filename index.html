@@ -7,13 +7,13 @@
   <script src="https://d3js.org/topojson.v3.min.js"></script>
   <script src="scatter_chart.js"></script>
   <style>
-    html{
-    padding: 0px;
-    margin: 0px;
-    background-color: rgb(235, 232, 226);
-    font-family: monospace;
-    text-align: center;
-    } 
+    html {
+      padding: 0px;
+      margin: 0px;
+      background-color: rgb(235, 232, 226);
+      font-family: monospace;
+      text-align: center;
+    }
 
     #map-div {
       display: flex;
@@ -41,31 +41,32 @@
     }
 
     #clear {
-      margin:10px;
-      font-size:16px;
+      margin: 10px;
+      font-size: 16px;
       padding-top: 3px;
       padding-bottom: 3px;
       padding-left: 5px;
       padding-right: 5px;
-      outline:none;
-      border:none;
+      outline: none;
+      border: none;
       border-radius: 10px;
+      font-family: monospace;
     }
 
     #clear:hover {
       background-color: #ddd;
     }
-    
   </style>
 </head>
 
 <body>
   <h1>INFO 4310 A3</h1>
+  <h2>Available Properties in Pittsburgh</h2>
   <div id="map-div">
     <svg id="map-svg" height="800" width="900"></svg>
     <svg id="map-legend" width="150"></svg>
   </div>
-  <h2>Please choose property Type</h2>
+  <h2>Choose a property type:</h2>
   <div id="type-filter-div"></div>
   <div>
     <svg id="scatter-plot" height="650" width="900"></svg>
@@ -129,38 +130,50 @@
         d.position = projection([d.Longitude, d.Latitude]);
       });
 
-      map.selectAll("circle").data(house_data)
-        .join("circle")
-        .attr("r", 4)
-        .attr("fill", d => priceScale(d["Sale Amount"]))
-        .attr("opacity", 0.9)
-        .attr("cx", d => d.position[0])
-        .attr("cy", d => d.position[1])
-        .on("mouseover", function (event, d) {
-          let el = d3.select(this);
-          el.attr("r", 8).attr("opacity", 1);
+      function draw_map_circles(checkbox) {
+        // filter data
+        let selectedProperties = []
+        for (let i = 0; i < checkbox.length; i++) {
+          if (checkbox[i].checked) {
+            selectedProperties.push(checkbox[i].value)
+          }
+        }
 
-          // configure the popup
-          popup.attr("visibility", "").style("border", "solid");
-          popup.append("p").text(d["Street Address"])
-            .attr("class", "label-text")
-            .attr("class", "label-text-title");
+        let filtered_data = house_data.filter(d => selectedProperties.includes(d['Property Type']));
 
-          popup.append("hr");
+        map.selectAll("circle").data(filtered_data)
+          .join("circle")
+          .attr("r", 4)
+          .attr("fill", d => priceScale(d["Sale Amount"]))
+          .attr("opacity", 0.9)
+          .attr("cx", d => d.position[0])
+          .attr("cy", d => d.position[1])
+          .on("mouseover", function (event, d) {
+            let el = d3.select(this);
+            el.attr("r", 8).attr("opacity", 1);
 
-          popup.append("p").text("Price: $" + d["Sale Amount"]).attr("class", "label-text")
-            .append("p").text("Total rooms: " + d["Total Rooms"]).attr("class", "label-text")
-            .append("p").text("Bedrooms: " + d["Bedrooms"]).attr("class", "label-text")
-            .append("p").text("Property type: " + d["Property Type"]).attr("class", "label-text")
-            .append("p").text("Built in " + d["Year Built"]).attr("class", "label-text");
-        })
-        .on("mouseout", function (event, d) {
-          let el = d3.select(this);
-          el.attr("r", 4).attr("opacity", 0.9);
+            // configure the popup
+            popup.attr("visibility", "").style("border", "solid");
+            popup.append("p").text(d["Street Address"])
+              .attr("class", "label-text")
+              .attr("class", "label-text-title");
 
-          popup.attr("visibility", "hidden").style("border", "none");
-          popup.selectAll('*').remove();
-        });
+            popup.append("hr");
+
+            popup.append("p").text("Price: $" + d["Sale Amount"]).attr("class", "label-text")
+              .append("p").text("Total rooms: " + d["Total Rooms"]).attr("class", "label-text")
+              .append("p").text("Bedrooms: " + d["Bedrooms"]).attr("class", "label-text")
+              .append("p").text("Property type: " + d["Property Type"]).attr("class", "label-text")
+              .append("p").text("Built in " + d["Year Built"]).attr("class", "label-text");
+          })
+          .on("mouseout", function (event, d) {
+            let el = d3.select(this);
+            el.attr("r", 4).attr("opacity", 0.9);
+
+            popup.attr("visibility", "hidden").style("border", "none");
+            popup.selectAll('*').remove();
+          });
+      }
 
       // draw map legend
       const rect_height = 26;
@@ -227,8 +240,9 @@
         let checkbox = document.querySelectorAll('input[name="type-checkbox"]');
         checkbox.forEach(function (box) {
           box.checked = false;
-          // clear the graph
+          // clear the graphs
           chartArea.selectAll('circle').remove();
+          map.selectAll("circle").remove();
         });
       });
 
@@ -253,9 +267,14 @@
           chartArea.selectAll('*').remove();
           // draw new scatterplot
           scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea, annotations);
+
+          // draw circles on map
+          map.selectAll("circle").remove();
+          draw_map_circles(checkbox);
         });
       });
       scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea, annotations);
+      draw_map_circles(checkbox);
     }
     requestData();
 
