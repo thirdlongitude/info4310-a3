@@ -7,6 +7,26 @@
   <script src="https://d3js.org/topojson.v3.min.js"></script>
   <script src="scatter_chart.js"></script>
   <style>
+    #map-div {
+      display: flex;
+    }
+
+    .label-text-title {
+      font-weight: bold;
+    }
+
+    #house-label {
+      text-align: left;
+      margin: auto;
+      padding-left: 7px;
+      padding-right: 7px;
+    }
+
+    #map-legend {
+      /* padding-top: 75%; */
+      margin-top: 35%;
+    }
+
     #checkbox {
       margin: 10px;
       padding: 20px;
@@ -21,11 +41,14 @@
       border-radius: 5px;
       text-align: center;
     }
+<<<<<<< HEAD
 
     #uncheck-all:hover {
       background-color: #ddd;
     }
     
+=======
+>>>>>>> bd8be3ea59ba36da4dea2ed0834bd84f8fcdbf8b
   </style>
 </head>
 
@@ -33,11 +56,9 @@
   <h1>INFO 4310 A3</h1>
   <div id="map-div">
     <svg id="map-svg" height="800" width="900"></svg>
-    <svg id="map-legend"></svg>
+    <svg id="map-legend" width="150"></svg>
   </div>
-  <div id="type-filter-div">
-    type filters here
-  </div>
+  <div id="type-filter-div"></div>
   <div>
     <svg id="scatter-plot" height="800" width="900"></svg>
   </div>
@@ -66,11 +87,11 @@
       const max_price = d3.max(house_data.map(d => d["Sale Amount"]).map(Number));
       console.log(max_price);
 
-      const price_colors = ["#fee7cf", "#fdd4ab", "#fdb97e", "#fd9c51", "#f77d2a",
-        "#e85e0e", "#cc4503", "#a33503", "#7f2704"]; // d3 scheme: sequential oranges
+      const price_colors = ["#7f2704", "#a33503", "#cc4503", "#e85e0e",
+        "#f77d2a", "#fd9c51", "#fdb97e"]; // from d3 scheme: sequential oranges
       const priceScale = d3.scaleLog()
         .domain([min_price, max_price]) // calculated above
-        .range([price_colors[2], price_colors[8]])
+        .range([price_colors[6], price_colors[0]])
         .unknown("lightgray");
 
       const pittsburgh = await d3.json("pittsburgh_neighborhoods.geo.json");
@@ -89,6 +110,12 @@
         .attr("stroke", "gray")
         .attr("strokewidth", 0.5);
 
+      // define a div to use as the popup
+      let popup = d3.select("#map-div").append("div")
+        .attr("id", "house-label")
+        .attr("visibility", "hidden")
+        .style("border", "none");
+
       // draw circles for houses
       house_data.forEach(d => {
         d.position = projection([d.Longitude, d.Latitude]);
@@ -97,11 +124,70 @@
       map.selectAll("circle").data(house_data)
         .join("circle")
         .attr("r", 4)
-        // .attr("fill", "black")
         .attr("fill", d => priceScale(d["Sale Amount"]))
         .attr("opacity", 0.9)
         .attr("cx", d => d.position[0])
-        .attr("cy", d => d.position[1]);
+        .attr("cy", d => d.position[1])
+        .on("mouseover", function (event, d) {
+          let el = d3.select(this);
+          el.attr("r", 8).attr("opacity", 1);
+
+          // configure the popup
+          popup.attr("visibility", "").style("border", "solid");
+          popup.append("p").text(d["Street Address"])
+            .attr("class", "label-text")
+            .attr("class", "label-text-title");
+
+          popup.append("hr");
+
+          popup.append("p").text("Price: $" + d["Sale Amount"]).attr("class", "label-text")
+            .append("p").text("Total rooms: " + d["Total Rooms"]).attr("class", "label-text")
+            .append("p").text("Bedrooms: " + d["Bedrooms"]).attr("class", "label-text")
+            .append("p").text("Property type: " + d["Property Type"]).attr("class", "label-text")
+            .append("p").text("Built in " + d["Year Built"]).attr("class", "label-text");
+        })
+        .on("mouseout", function (event, d) {
+          let el = d3.select(this);
+          el.attr("r", 4).attr("opacity", 0.9);
+
+          popup.attr("visibility", "hidden").style("border", "none");
+          popup.selectAll('*').remove();
+        });
+
+      // draw map legend
+      const rect_height = 26;
+      const rect_width = 30;
+      const label_x_offset = 15;
+      const label_y_offset = 0;
+      const label_text = [max_price, "", "", "", "", "", min_price];
+
+      let legend = d3.select("#map-legend")
+        .append("g")
+        .attr("id", "legend-g")
+        .selectAll(".legend-item")
+        .data(price_colors);
+
+      legend.enter().append("rect")
+        .attr("class", "legend-item")
+        .attr("height", rect_height)
+        .attr("width", rect_width)
+        .attr("fill", d => d)
+        .attr("transform", (d, i) => {
+          let x = label_x_offset;
+          let y = label_y_offset + rect_height * i;
+          return `translate(${x}, ${y})`;
+        });
+
+      legend.enter().append("text")
+        .attr("x", label_x_offset + rect_width + 5)
+        .attr("y", (d, i) => label_y_offset + rect_height * i + 19)
+        .text(function (d, i) {
+          if (label_text[i] !== "") {
+            return "$" + label_text[i];
+          } else {
+            return "";
+          }
+        });
 
       // draw checkboxes for property type
       const type_filter_div = d3.select("#type-filter-div");
@@ -116,17 +202,17 @@
           .attr("value", d)
           .attr("id", "checkbox")
           .attr("name", "type-checkbox")
-          .attr("unchecked", true)
+          .attr("checked", true);
 
         type_checkboxes.append("label")
           .text(d);
       });
 
-      // add a button to unchecked all checkboxes
+      // add a button to uncheck all checkboxes
       type_checkboxes.append("button")
         .attr("id", "uncheck-all")
         .text("Uncheck All");
-      
+
       // add function to uncheck all checkboxes
       const uncheck_all = document.getElementById("uncheck-all");
       uncheck_all.addEventListener('click', function () {
@@ -134,11 +220,9 @@
         checkbox.forEach(function (box) {
           box.checked = false;
           // clear the graph
-          chartArea.selectAll('*').remove();
+          chartArea.selectAll('circle').remove();
         });
       });
-  
-      
 
       const svg2 = d3.select("#scatter-plot")
       const width2 = svg2.attr("width");
@@ -147,8 +231,10 @@
       const scatterWidth = width2 - margins2.left - margins2.right;
       const scatterHeight = height2 - margins2.top - margins2.bottom;
 
+      let annotations = svg2.append("g");
+
       let chartArea = svg2.append("g")
-        .attr("transform", "translate(" + margins2.left + ", " + margins2.top + ")");
+        .attr("transform", "translate(" + margins2.left + ", 0)");
 
       // check which checkboxes are checked
       let checkbox = document.querySelectorAll('input[name="type-checkbox"]');
@@ -158,10 +244,10 @@
           // remove previous scatterplot
           chartArea.selectAll('*').remove();
           // draw new scatterplot
-          scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea);
+          scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea, annotations);
         });
       });
-      scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea);
+      scatterPlot(checkbox, house_data, scatterWidth, scatterHeight, chartArea, annotations);
     }
     requestData();
 
